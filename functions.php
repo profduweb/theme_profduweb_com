@@ -101,7 +101,7 @@ function profduweb_social_icons($item_output, $item, $depth, $args)
         $url = strtolower($item->url);
 
         if (!empty($custom_svg)) {
-            $icon = $custom_svg;
+            $icon = wp_kses($custom_svg, profduweb_allowed_svg_tags());
         } elseif (strpos($url, 'instagram.com') !== false) {
             $icon = '<svg viewBox="0 0 448 512" width="24" height="24" fill="currentColor"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>';
         } elseif (strpos($url, 'threads.net') !== false) {
@@ -115,7 +115,7 @@ function profduweb_social_icons($item_output, $item, $depth, $args)
         }
 
         if (!empty($icon)) {
-            $item_output = str_replace($args->link_before . apply_filters('the_title', $item->title, $item->ID) . $args->link_after, '<span class="screen-reader-text">' . $item->title . '</span>' . $icon, $item_output);
+            $item_output = str_replace($args->link_before . apply_filters('the_title', $item->title, $item->ID) . $args->link_after, '<span class="screen-reader-text">' . esc_html($item->title) . '</span>' . $icon, $item_output);
         }
     }
 
@@ -166,6 +166,35 @@ function profduweb_nav_menu_item_custom_fields($item_id, $item, $depth, $args, $
 add_action('wp_nav_menu_item_custom_fields', 'profduweb_nav_menu_item_custom_fields', 10, 5);
 
 /**
+ * Allowed SVG markup for custom menu icons.
+ */
+function profduweb_allowed_svg_tags()
+{
+    return array(
+        'svg' => array(
+            'xmlns' => true,
+            'viewbox' => true,
+            'width' => true,
+            'height' => true,
+            'fill' => true,
+            'class' => true,
+            'focusable' => true,
+            'role' => true,
+            'aria-hidden' => true,
+        ),
+        'path' => array(
+            'd' => true,
+            'fill' => true,
+        ),
+        'g' => array(
+            'fill' => true,
+        ),
+        'title' => array(),
+        'desc' => array(),
+    );
+}
+
+/**
  * Save custom SVG field for menu items.
  */
 function profduweb_update_nav_menu_item($menu_id, $menu_item_db_id, $args)
@@ -174,36 +203,155 @@ function profduweb_update_nav_menu_item($menu_id, $menu_item_db_id, $args)
         // Sanitize SVG input using wp_kses to allow ONLY specific safe SVG tags and attributes
         $svg_content = wp_unslash($_POST['menu-item-custom-svg'][$menu_item_db_id]);
 
-        $allowed_html = array(
-            'svg' => array(
-                'xmlns' => true,
-                'viewbox' => true,
-                'width' => true,
-                'height' => true,
-                'fill' => true,
-                'class' => true,
-                'focusable' => true,
-                'role' => true,
-                'aria-hidden' => true,
-            ),
-            'path' => array(
-                'd' => true,
-                'fill' => true,
-            ),
-            'g' => array(
-                'fill' => true,
-            ),
-            'title' => array(),
-            'desc' => array(),
-        );
-
-        $sanitized_svg = wp_kses($svg_content, $allowed_html);
+        $sanitized_svg = wp_kses($svg_content, profduweb_allowed_svg_tags());
         update_post_meta($menu_item_db_id, '_profduweb_custom_svg', $sanitized_svg);
     } else {
         delete_post_meta($menu_item_db_id, '_profduweb_custom_svg');
     }
 }
 add_action('wp_update_nav_menu_item', 'profduweb_update_nav_menu_item', 10, 3);
+
+/**
+ * Use one canonical URL source for every public view.
+ */
+remove_action('wp_head', 'rel_canonical');
+
+function profduweb_get_canonical_url()
+{
+    if (is_singular()) {
+        return get_permalink();
+    }
+
+    if (is_home() || is_front_page()) {
+        $paged = max(1, (int) get_query_var('paged'));
+        return 1 < $paged ? get_pagenum_link($paged) : home_url('/');
+    }
+
+    if (is_archive() || is_search()) {
+        $paged = max(1, (int) get_query_var('paged'));
+        return get_pagenum_link($paged);
+    }
+
+    return home_url(add_query_arg(array(), $GLOBALS['wp']->request ?? ''));
+}
+
+function profduweb_get_meta_description()
+{
+    if (is_singular()) {
+        $post_id = get_queried_object_id();
+
+        if (has_excerpt($post_id)) {
+            $description = get_the_excerpt($post_id);
+        } else {
+            $post = get_post($post_id);
+            $description = $post ? $post->post_content : '';
+        }
+    } elseif (is_category() || is_tag() || is_tax()) {
+        $description = term_description();
+    } elseif (is_author()) {
+        $description = get_the_author_meta('description');
+    } elseif (is_search()) {
+        $description = sprintf(
+            /* translators: %s: search query. */
+            __('Search results for %s', 'profduweb'),
+            get_search_query()
+        );
+    } else {
+        $description = get_bloginfo('description');
+    }
+
+    $description = wp_strip_all_tags(strip_shortcodes((string) $description));
+    $description = preg_replace('/\s+/', ' ', $description);
+    $description = trim($description);
+
+    return wp_trim_words($description, 28, '');
+}
+
+function profduweb_get_social_image()
+{
+    if (is_singular() && has_post_thumbnail()) {
+        return get_the_post_thumbnail_url(get_queried_object_id(), 'large');
+    }
+
+    return get_template_directory_uri() . '/screenshot.png';
+}
+
+function profduweb_get_social_title()
+{
+    if (is_singular()) {
+        return sprintf('%s | %s', single_post_title('', false), get_bloginfo('name'));
+    }
+
+    return wp_get_document_title();
+}
+
+/**
+ * Output JSON-LD for search engines without depending on an SEO plugin.
+ */
+function profduweb_output_structured_data()
+{
+    $site_url = home_url('/');
+    $site_name = get_bloginfo('name');
+
+    $graph = array(
+        array(
+            '@type' => 'WebSite',
+            '@id' => trailingslashit($site_url) . '#website',
+            'url' => $site_url,
+            'name' => $site_name,
+            'description' => get_bloginfo('description'),
+            'potentialAction' => array(
+                '@type' => 'SearchAction',
+                'target' => home_url('/?s={search_term_string}'),
+                'query-input' => 'required name=search_term_string',
+            ),
+        ),
+        array(
+            '@type' => 'Person',
+            '@id' => trailingslashit($site_url) . '#person',
+            'name' => 'Mat',
+            'url' => $site_url,
+            'sameAs' => array(
+                'https://instagram.com/profduweb',
+                'https://bsky.app/profile/profduweb.com',
+                'https://www.youtube.com/@appetco/community',
+            ),
+        ),
+    );
+
+    if (is_singular()) {
+        $post_id = get_queried_object_id();
+        $image = profduweb_get_social_image();
+
+        $graph[] = array_filter(
+            array(
+                '@type' => is_page($post_id) ? 'WebPage' : 'BlogPosting',
+                '@id' => get_permalink($post_id) . '#article',
+                'url' => get_permalink($post_id),
+                'mainEntityOfPage' => get_permalink($post_id),
+                'headline' => get_the_title($post_id),
+                'description' => profduweb_get_meta_description(),
+                'image' => $image ? array($image) : null,
+                'datePublished' => get_the_date(DATE_W3C, $post_id),
+                'dateModified' => get_the_modified_date(DATE_W3C, $post_id),
+                'author' => array(
+                    '@id' => trailingslashit($site_url) . '#person',
+                ),
+                'publisher' => array(
+                    '@id' => trailingslashit($site_url) . '#person',
+                ),
+            )
+        );
+    }
+
+    $data = array(
+        '@context' => 'https://schema.org',
+        '@graph' => $graph,
+    );
+
+    echo '<script type="application/ld+json">' . wp_json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+}
+add_action('wp_head', 'profduweb_output_structured_data', 20);
 
 /**
  * Custom Comment Callback

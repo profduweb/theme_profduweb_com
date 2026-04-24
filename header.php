@@ -10,38 +10,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="profile" href="https://gmpg.org/xfn/11">
 
-    <!-- Open Graph Tags -->
+    <!-- SEO and social discovery tags -->
     <?php
-    $og_url = home_url('/');
-    $og_type = 'website';
-    $og_title = get_bloginfo('name');
-    $og_image = get_template_directory_uri() . '/screenshot.png';
-    $og_desc = get_bloginfo('description');
-
-    if (is_single() || is_page()) {
-        $current_id = get_queried_object_id();
-        $og_url = get_permalink($current_id);
-        $og_type = 'article';
-        $og_title = get_the_title($current_id);
-
-        if (has_post_thumbnail($current_id)) {
-            $og_image = get_the_post_thumbnail_url($current_id, 'large');
-        }
-
-        if (has_excerpt($current_id)) {
-            $og_desc = wp_strip_all_tags(get_the_excerpt($current_id));
-        } else {
-            $post_obj = get_post($current_id);
-            $content = $post_obj ? $post_obj->post_content : '';
-            $og_desc = wp_trim_words(wp_strip_all_tags($content), 30);
-        }
-    }
+    $profduweb_canonical_url = profduweb_get_canonical_url();
+    $profduweb_meta_description = profduweb_get_meta_description();
+    $profduweb_social_title = profduweb_get_social_title();
+    $profduweb_social_image = profduweb_get_social_image();
+    $profduweb_og_type = is_singular('post') ? 'article' : 'website';
     ?>
-    <meta property="og:title" content="<?php echo esc_attr($og_title); ?>" />
-    <meta property="og:type" content="<?php echo esc_attr($og_type); ?>" />
-    <meta property="og:url" content="<?php echo esc_url($og_url); ?>" />
-    <meta property="og:image" content="<?php echo esc_url($og_image); ?>" />
-    <meta property="og:description" content="<?php echo esc_attr($og_desc); ?>" />
+    <?php if ($profduweb_meta_description): ?>
+        <meta name="description" content="<?php echo esc_attr($profduweb_meta_description); ?>" />
+    <?php endif; ?>
+    <link rel="canonical" href="<?php echo esc_url($profduweb_canonical_url); ?>" />
+    <meta property="og:site_name" content="<?php echo esc_attr(get_bloginfo('name')); ?>" />
+    <meta property="og:locale" content="<?php echo esc_attr(str_replace('-', '_', get_bloginfo('language'))); ?>" />
+    <meta property="og:title" content="<?php echo esc_attr($profduweb_social_title); ?>" />
+    <meta property="og:type" content="<?php echo esc_attr($profduweb_og_type); ?>" />
+    <meta property="og:url" content="<?php echo esc_url($profduweb_canonical_url); ?>" />
+    <meta property="og:image" content="<?php echo esc_url($profduweb_social_image); ?>" />
+    <?php if ($profduweb_meta_description): ?>
+        <meta property="og:description" content="<?php echo esc_attr($profduweb_meta_description); ?>" />
+    <?php endif; ?>
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="<?php echo esc_attr($profduweb_social_title); ?>" />
+    <?php if ($profduweb_meta_description): ?>
+        <meta name="twitter:description" content="<?php echo esc_attr($profduweb_meta_description); ?>" />
+    <?php endif; ?>
+    <meta name="twitter:image" content="<?php echo esc_url($profduweb_social_image); ?>" />
+    <?php if (is_singular('post')): ?>
+        <meta property="article:published_time" content="<?php echo esc_attr(get_the_date(DATE_W3C)); ?>" />
+        <meta property="article:modified_time" content="<?php echo esc_attr(get_the_modified_date(DATE_W3C)); ?>" />
+    <?php endif; ?>
 
     <?php wp_head(); ?>
 </head>
