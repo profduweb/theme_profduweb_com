@@ -124,17 +124,6 @@ function profduweb_social_icons($item_output, $item, $depth, $args)
 add_filter('walker_nav_menu_start_el', 'profduweb_social_icons', 10, 4);
 
 /**
- * Limit posts on the home page to 12.
- */
-function profduweb_homepage_posts($query)
-{
-    if ($query->is_home() && $query->is_main_query()) {
-        $query->set('posts_per_page', 12);
-    }
-}
-add_action('pre_get_posts', 'profduweb_homepage_posts');
-
-/**
  * Remove default widgets (Archives, Categories) to keep the sidebar clean.
  */
 function profduweb_remove_default_widgets()
