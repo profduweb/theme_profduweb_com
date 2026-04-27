@@ -4,7 +4,7 @@ Theme URI: https://profduweb.com
 Author: Mat
 Author URI: https://profduweb.com
 Description: Un thème WordPress minimaliste, rapide et moderne pour ProfduWeb. Design épuré avec couleurs accentuées, mode sombre en en-tête et pied de page, optimisé pour l'éditeur Gutenberg.
-Version: 4.3
+Version: 4.3.1
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: profduweb
@@ -1324,7 +1324,7 @@ select:focus-visible {
 }
 
 .post-thumbnail {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 9;
     background: var(--color-surface-soft);
 }
 
