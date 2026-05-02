@@ -19,12 +19,14 @@ get_header();
                     <article id="post-<?php the_ID(); ?>" <?php post_class('post-card'); ?>>
                         <?php 
                         $comment_count = get_comments_number();
-                        if ( $comment_count > 0 ) : 
+                        $comment_label = '';
+                        if ( $comment_count > 0 ) {
+                            $comment_label = sprintf(
+                                _n( '%s commentaire', '%s commentaires', $comment_count, 'profduweb' ),
+                                number_format_i18n( $comment_count )
+                            );
+                        }
                         ?>
-                            <div class="post-comment-badge" title="<?php echo esc_attr( sprintf( _n( '%s comment', '%s comments', $comment_count, 'profduweb' ), number_format_i18n( $comment_count ) ) ); ?>">
-                                <?php echo esc_html( $comment_count ); ?>
-                            </div>
-                        <?php endif; ?>
                         <?php if (has_post_thumbnail()): ?>
                             <a class="post-thumbnail" href="<?php the_permalink(); ?>" aria-hidden="true" tabindex="-1">
                                 <?php
@@ -39,6 +41,11 @@ get_header();
                                     )
                                 );
                                 ?>
+                                <?php if ( $comment_label ) : ?>
+                                    <span class="post-comment-badge" title="<?php echo esc_attr( $comment_label ); ?>">
+                                        <?php echo esc_html( $comment_label ); ?>
+                                    </span>
+                                <?php endif; ?>
                             </a>
                         <?php else: ?>
                             <!-- Fallback empty space if no thumbnail to maintain visual grid consistency -->
@@ -46,6 +53,11 @@ get_header();
                                 style="display: flex; align-items: center; justify-content: center; background-color: #fafafa;">
                                 <img src="<?php echo esc_url(get_template_directory_uri() . '/images/image-PWD-invert.svg'); ?>"
                                     alt="Default Thumbnail" style="width: 50%; height: auto; object-fit: contain;">
+                                <?php if ( $comment_label ) : ?>
+                                    <span class="post-comment-badge" title="<?php echo esc_attr( $comment_label ); ?>">
+                                        <?php echo esc_html( $comment_label ); ?>
+                                    </span>
+                                <?php endif; ?>
                             </a>
                         <?php endif; ?>
 
